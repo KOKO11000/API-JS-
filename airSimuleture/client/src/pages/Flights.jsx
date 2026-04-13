@@ -1,5 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router'
+import Menu from '../components/home/Menu'
 
 export default function Flights() {
     // const navigate = useNavigate()
@@ -7,6 +8,9 @@ export default function Flights() {
     //     return navigate('/')
     // }
   return (
-    <div>Flights</div>
+    <div>
+      <Menu />
+      <h1 className='text-center text-4xl font-bold mt-10'>Flights Page</h1>
+    </div>
   )
 }
