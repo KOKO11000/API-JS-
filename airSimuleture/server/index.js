@@ -1,14 +1,17 @@
-import express from 'express';
+import express from "express";
 const app = express();
 app.use(express.json());
 
-import aircrafts from './aircrafts/routes.js';
-import aircraftTypes from './aircraftTypes/routes.js';
-import flights from './flights/routes.js';
+import aircrafts from "./aircrafts/routes.js";
+import aircraftTypes from "./aircraftTypes/routes.js";
+import flights from "./flights/routes.js";
+app.get("/health", (req, res) =>
+  res.send("Welcome to the Air Simulateur API!"),
+);
 
-app.use('/aircrafts', aircrafts);
-app.use('/aircraftTypes', aircraftTypes);
-app.use('/flights', flights);
+app.use("/aircrafts", aircrafts);
+app.use("/aircraftTypes", aircraftTypes);
+app.use("/flights", flights);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`🚀 Server listening on ${port}`));
