@@ -86,4 +86,3 @@ export async function deleteById(req, res) {
     res.status(500).json({ error: "Failed to delete aircraft type" });
   }
 }
-
