@@ -1,11 +1,20 @@
 import db from "../db.js";
 
-export async function getAll(tableName) {
+
+export async function getAll(tableName, filters = {}) {
   try {
-    const result = await db.from(tableName).select("*");
-    return result.data;
+    let query = db.from(tableName).select("*");
+
+    // Apply filters
+    for (const [key, value] of Object.entries(filters)) {
+      query = query.eq(key, value);
+    }
+
+    const result = await query;
+    return result.data || [];
   } catch (error) {
     console.error("get all items err:", error.message);
+    return [];
   }
 }
 export async function getAircraftById(tableName, id) {
@@ -14,6 +23,7 @@ export async function getAircraftById(tableName, id) {
     return result.data;
   } catch (error) {
     console.error("get item by id err:", error.message);
+    return null;
   }
 }
 
@@ -24,6 +34,7 @@ export async function createAircraft(tableName, data) {
     return result.data;
   } catch (error) {
     console.error("create item err:", error.message);
+    return null;
   }
 }
 
@@ -38,6 +49,7 @@ export async function updateAircraft(tableName, id, data) {
     return result.data;
   } catch (error) {
     console.error("update item err:", error.message);
+    return null;
   }
 }
 
@@ -52,5 +64,6 @@ export async function deleteAircraft(tableName, id) {
     return result.data;
   } catch (error) {
     console.error("delete item err:", error.message);
+    return null;
   }
 }

@@ -1,10 +1,16 @@
-import * as DAL from "../DAL/supabase.js";
+import {
+  createAircraft,
+  getAircraftById,
+  getAll,
+  updateAircraft,
+  deleteAircraft,
+} from "../DAL/supabase.js";
 
 const tableName = "flights";
 
-export async function list(req, res) {
+export async function list(_, res) {
   try {
-    const flights = await DAL.getAll(tableName);
+    const flights = await getAll(tableName);
     res.json(flights);
   } catch (error) {
     res.status(500).json({ error: "Failed to retrieve flights" });
@@ -14,7 +20,7 @@ export async function list(req, res) {
 export async function get(req, res) {
   try {
     const { id } = req.params;
-    const flight = await DAL.getAircraftById(tableName, id);
+    const flight = await getAircraftById(tableName, id);
     if (flight) {
       res.json(flight);
     } else {
@@ -27,6 +33,7 @@ export async function get(req, res) {
 
 export async function create(req, res) {
   const { aircraft_id, take_off, is_land, Longitude, Latitude } = req.body;
+
   try {
     if (
       !aircraft_id ||
@@ -37,22 +44,43 @@ export async function create(req, res) {
     ) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    const aircraft = await DAL.getAircraftById("aircrafts", aircraft_id);
-    if (!aircraft) {
-      return res.status(400).json({ error: "Invalid aircraft_id" });
+
+    const lon = Number(Longitude);
+    const lat = Number(Latitude);
+
+    if (isNaN(lon) || isNaN(lat)) {
+      return res
+        .status(400)
+        .json({ error: "Longitude and Latitude must be numbers" });
     }
 
-    const newFlight = await DAL.createAircraft(tableName, {
+    if (isNaN(Date.parse(take_off))) {
+      return res.status(400).json({ error: "Invalid take_off date" });
+    }
+
+    const existingFlight = await getAll(tableName, {
+      aircraft_id,
+      is_land: false,
+    });
+
+    if (existingFlight.length > 0) {
+      return res.status(400).json({
+        error: "This aircraft already has an active flight",
+      });
+    }
+
+    const newFlight = await createAircraft(tableName, {
       aircraft_id,
       take_off,
       is_land,
-      Longitude,
-      Latitude,
+      Longitude: lon,
+      Latitude: lat,
       created_at: new Date().toISOString(),
     });
-    res.status(201).json(newFlight);
+
+    return res.status(201).json(newFlight);
   } catch (error) {
-    res.status(500).json({ error: "Failed to create flight" });
+    return res.status(500).json({ error: "Failed to create flight" });
   }
 }
 
@@ -73,7 +101,7 @@ export async function update(req, res) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const updatedFlight = await DAL.updateAircraft(tableName, id, {
+    const updatedFlight = await updateAircraft(tableName, id, {
       aircraft_id,
       take_off,
       is_land,
@@ -98,7 +126,7 @@ export async function deleteById(req, res) {
       return res.status(400).json({ error: "Missing flight ID" });
     }
 
-    const deletedFlight = await DAL.deleteAircraft(tableName, id);
+    const deletedFlight = await deleteAircraft(tableName, id);
     if (deletedFlight) {
       res.json({ message: "Flight deleted successfully" });
     } else {

@@ -1,3 +1,4 @@
+// Changes made: Changed create function to handle single object instead of array for simplicity and synchronization. Added trimming and lowercasing for name and aircraft_type, improved validations.
 import {
   deleteAircraft,
   getAll,
@@ -33,15 +34,28 @@ export async function get(req, res) {
 
 export async function create(req, res) {
   const { name, aircraft_type } = req.body;
+
   try {
     if (!name || !aircraft_type) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    const cleanName = name.trim().toLowerCase();
+    const cleanType = aircraft_type.trim().toLowerCase();
+
+    const existingAircraft = await getAll(tableName, { name: cleanName });
+    if (existingAircraft.length > 0) {
+      return res
+        .status(400)
+        .json({ error: "Aircraft with this name already exists" });
+    }
+
     const newAircraft = await createAircraft(tableName, {
-      name,
-      aircraft_type,
+      name: cleanName,
+      aircraft_type: cleanType,
       created_at: new Date().toISOString(),
     });
+
     res.status(201).json(newAircraft);
   } catch (error) {
     res.status(500).json({ error: "Failed to create aircraft" });

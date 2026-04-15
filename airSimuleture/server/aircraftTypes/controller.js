@@ -1,4 +1,10 @@
-import { createAircraft, getAircraftById, getAll, updateAircraft } from "../DAL/supabase.js";
+// Changes made: Changed create function to handle single object instead of array for simplicity and synchronization with other controllers. Removed batch processing and error collection.
+import {
+  createAircraft,
+  getAircraftById,
+  getAll,
+  updateAircraft,
+} from "../DAL/supabase.js";
 
 const tableName = "aircraft_types";
 
@@ -27,31 +33,44 @@ export async function get(req, res) {
 
 export async function create(req, res) {
   const { aircraftType, max_speed, full_tank_gas } = req.body;
+
   try {
     if (!aircraftType || !max_speed || !full_tank_gas) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
     if (isNaN(max_speed) || isNaN(full_tank_gas)) {
-      return res.status(400).json({ error: "max_speed and full_tank_gas must be numbers" });
+      return res
+        .status(400)
+        .json({ error: "max_speed and full_tank_gas must be numbers" });
     }
-    if(max_speed <= 0 || full_tank_gas <= 0) {
-      return res.status(400).json({ error: "max_speed and full_tank_gas must be positive numbers" });
-    } 
-    const existingAircraft = await getAll(tableName, { aircraftType });
-        if (existingAircraft.length > 0) {
-          return res.status(400).json({ error: "Aircraft with this name already exists" });
-        }
+
+    if (max_speed <= 0 || full_tank_gas <= 0) {
+      return res.status(400).json({
+        error: "max_speed and full_tank_gas must be positive numbers",
+      });
+    }
+
+    const existingAircraftType = await getAll(tableName, { aircraftType });
+    if (existingAircraftType.length > 0) {
+      return res
+        .status(400)
+        .json({ error: "Aircraft type with this name already exists" });
+    }
+
     const newAircraftType = await createAircraft(tableName, {
       aircraftType,
       max_speed,
       full_tank_gas,
       created_at: new Date().toISOString(),
     });
+
     res.status(201).json(newAircraftType);
   } catch (error) {
     res.status(500).json({ error: "Failed to create aircraft type" });
   }
 }
+
 
 export async function update(req, res) {
   const { id } = req.params;
@@ -74,8 +93,8 @@ export async function update(req, res) {
 }
 
 export async function deleteById(req, res) {
-  const { id } = req.params;  
-    try {
+  const { id } = req.params;
+  try {
     const deletedAircraftType = await deleteAircraft(tableName, id);
     if (deletedAircraftType) {
       res.json(deletedAircraftType);
