@@ -1,3 +1,23 @@
+/**
+ * Aircraft Types Page - Classification Management
+ * 
+ * Purpose: Define and manage aircraft classifications and specifications
+ * 
+ * Features:
+ * - View all aircraft types in a data table
+ * - Create new aircraft type with specifications:
+ *   - Type name (Fighter, Cargo, Helicopter, etc.)
+ *   - Maximum speed capability (km/h)
+ *   - Full tank capacity (liters or gallons)
+ * - Edit existing type details
+ * - Delete aircraft types (only if no aircraft assigned)
+ * 
+ * Data Integrity:
+ * - Aircraft types are core data referenced by all aircraft
+ * - Cannot delete type if aircraft still use it
+ * - Type specifications affect flight duration calculations
+ */
+
 import React, { useState } from "react";
 import Menu from "../components/home/Menu";
 import DataTable from "../components/DataTable";

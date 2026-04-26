@@ -1,3 +1,18 @@
+/**
+ * Home Page - Main Navigation Hub
+ * 
+ * Purpose: Central landing page providing quick access to all application features
+ * 
+ * Sections:
+ * - Aircraft Management: Create, edit, manage your fleet
+ * - Aircraft Types: Define and organize aircraft classifications
+ * - Flights: Schedule, monitor, and track flight missions
+ * - Mission Map: Real-time visualization and mission control
+ * 
+ * This page serves as the main entry point for users to navigate between
+ * different operational areas of the system.
+ */
+
 import React from "react";
 import { Link } from "react-router";
 import Menu from "../components/home/Menu";

@@ -1,38 +1,45 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import * as flightApi from "../api/flights";
 
 export default function useFlights() {
   const [flights, setFlights] = useState([]);
   const [aircrafts, setAircrafts] = useState([]);
+  const [aircraftTypes, setAircraftTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-   async function fetchFlights() {
+  async function fetchFlights() {
     try {
-      const response = await axios.get("http://localhost:5000/flights");
-      setFlights(response.data);
+      const response = await flightApi.getFlights();
+      setFlights(response);
     } catch (error) {
       console.error("Failed to fetch flights:", error);
     }
   }
 
-   async function fetchAircrafts() {
+  async function fetchAircrafts() {
     try {
-      const response = await axios.get("http://localhost:5000/aircrafts");
-      setAircrafts(response.data);
+      const response = await flightApi.getAircrafts();
+      setAircrafts(response);
     } catch (error) {
       console.error("Failed to fetch aircrafts:", error);
+    }
+  }
+
+  async function fetchAircraftTypes() {
+    try {
+      const response = await flightApi.getAircrafts();
+      setAircraftTypes(response);
+    } catch (error) {
+      console.error("Failed to fetch aircraft types:", error);
     }
   }
 
   async function createFlight(flightData) {
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/flights",
-        flightData
-      );
-      setFlights((prev) => [...prev, response.data]);
-      return response.data;
+      const newFlight = await flightApi.createFlight(flightData);
+      setFlights((prev) => [...prev, newFlight]);
+      return newFlight;
     } catch (error) {
       console.error("Failed to create flight:", error);
       throw error;
@@ -44,14 +51,9 @@ export default function useFlights() {
   async function updateFlight(id, flightData) {
     setIsLoading(true);
     try {
-      const response = await axios.put(
-        `http://localhost:5000/flights/${id}`,
-        flightData
-      );
-      setFlights((prev) =>
-        prev.map((f) => (f.id === id ? response.data : f))
-      );
-      return response.data;
+      const updatedFlight = await flightApi.updateFlight(id, flightData);
+      setFlights((prev) => prev.map((flight) => (flight.id === id ? updatedFlight : flight)));
+      return updatedFlight;
     } catch (error) {
       console.error("Failed to update flight:", error);
       throw error;
@@ -63,8 +65,8 @@ export default function useFlights() {
   async function deleteFlight(id) {
     setIsLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/flights/${id}`);
-      setFlights((prev) => prev.filter((f) => f.id !== id));
+      await flightApi.deleteFlight(id);
+      setFlights((prev) => prev.filter((flight) => flight.id !== id));
     } catch (error) {
       console.error("Failed to delete flight:", error);
       throw error;
@@ -76,13 +78,13 @@ export default function useFlights() {
   useEffect(() => {
     fetchFlights();
     fetchAircrafts();
-    console.log("fetchFlights called");
-
+    fetchAircraftTypes();
   }, []);
 
   return {
     flights,
     aircrafts,
+    aircraftTypes,
     isLoading,
     createFlight,
     updateFlight,

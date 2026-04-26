@@ -1,3 +1,30 @@
+/**
+ * Flights Page - Flight Scheduling & Management
+ * 
+ * Purpose: Schedule and manage flight missions for the organization
+ * 
+ * Features:
+ * - View all flights in a data table (sortable, searchable)
+ * - Schedule new flights with:
+ *   - Aircraft selection from available inventory
+ *   - Target location coordinates (latitude, longitude)
+ *   - Takeoff time specification
+ * - Edit flight details before mission launch
+ * - Cancel/delete flights that haven't taken off
+ * - View flight status: Scheduled, Outbound, Returning, Landed
+ * 
+ * Data Integrity:
+ * - Flights can only be created for existing aircraft
+ * - Aircraft must have valid type assignment
+ * - Cannot delete active flights (in Outbound or Returning status)
+ * - All flights visible on Mission Map dashboard
+ * 
+ * Status Lifecycle:
+ * - Scheduled → Outbound (at takeoff time)
+ * - Outbound → Returning (after reaching target)
+ * - Returning → Landed (after return to base)
+ */
+
 import React, { useState } from "react";
 import Menu from "../components/home/Menu";
 import DataTable from "../components/DataTable";

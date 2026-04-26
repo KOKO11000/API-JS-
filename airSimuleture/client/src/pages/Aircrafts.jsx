@@ -1,3 +1,21 @@
+/**
+ * Aircrafts Page - Fleet Management Interface
+ * 
+ * Purpose: Manage the aircraft inventory of the organization
+ * 
+ * Features:
+ * - View all aircraft in a data table (sortable, searchable)
+ * - Add new aircraft with name, designation, and type assignment
+ * - Edit existing aircraft properties
+ * - Delete aircraft from the inventory
+ * - Assign aircraft types to ensure proper classification
+ * 
+ * Data Integrity:
+ * - Each aircraft must have a valid aircraft type
+ * - Aircraft cannot be deleted if active flights exist
+ * - Aircraft cannot be unassigned from types
+ */
+
 import Menu from "../components/home/Menu";
 import DataTable from "../components/DataTable";
 import AircraftModal from "../components/aircrfts/AircraftModal";
