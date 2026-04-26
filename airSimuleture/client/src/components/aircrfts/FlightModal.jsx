@@ -33,7 +33,7 @@ export default function FlightModal({
         Latitude: "",
       });
     }
-  }, [isOpen, mode, flight]);
+  }, [isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

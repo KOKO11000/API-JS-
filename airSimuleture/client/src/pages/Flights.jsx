@@ -65,7 +65,7 @@ export default function Flights() {
     <div className="min-h-screen flex flex-col">
       <Menu />
       <div className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
           <div className="mb-12">
             <h1 className="text-5xl font-bold mb-4 text-white">Active Flights</h1>
             <p className="text-lg text-gray-300 leading-relaxed">

@@ -38,7 +38,7 @@ export default function DataTable({ data = [], columns = [], onEdit, onDelete, o
         ) : (
           data.map((item, index) => (
             <div
-              key={index}
+              key={item.id}
               className="grid p-4 border-t border-white/10 hover:bg-white/10 transition-all duration-200"
               style={{ gridTemplateColumns: `repeat(${columns.length + 1}, 1fr)` }}
             >
@@ -79,7 +79,7 @@ export default function DataTable({ data = [], columns = [], onEdit, onDelete, o
         ) : (
           data.map((item, index) => (
             <div
-              key={index}
+              key={item.id}
               className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-xl p-4 rounded-xl border border-white/20 hover:border-sky-400/50 transition-all duration-200 shadow-lg"
             >
               {columns.map((col, i) => (

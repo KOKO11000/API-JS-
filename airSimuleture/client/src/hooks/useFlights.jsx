@@ -6,7 +6,7 @@ export default function useFlights() {
   const [aircrafts, setAircrafts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  async function fetchFlights() {
+   async function fetchFlights() {
     try {
       const response = await axios.get("http://localhost:5000/flights");
       setFlights(response.data);
@@ -15,7 +15,7 @@ export default function useFlights() {
     }
   }
 
-  async function fetchAircrafts() {
+   async function fetchAircrafts() {
     try {
       const response = await axios.get("http://localhost:5000/aircrafts");
       setAircrafts(response.data);
@@ -76,6 +76,8 @@ export default function useFlights() {
   useEffect(() => {
     fetchFlights();
     fetchAircrafts();
+    console.log("fetchFlights called");
+
   }, []);
 
   return {

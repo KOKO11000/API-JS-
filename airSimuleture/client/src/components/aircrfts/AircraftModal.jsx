@@ -30,7 +30,7 @@ export default function AircraftModal({
     } else {
       setFormData({ name: "", aircraft_type: "" });
     }
-  }, [isOpen, mode, aircraft]);
+  }, [isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

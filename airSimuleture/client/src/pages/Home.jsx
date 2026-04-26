@@ -34,7 +34,7 @@ export default function Home() {
       
       {/* Hero Section */}
       <div className="flex-1 flex items-center">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full text-center">
           <div className="text-center mb-20">
             <h1 className="text-7xl font-bold mb-6 bg-linear-to-r from-sky-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
               Air Combat Simulator

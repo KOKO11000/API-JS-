@@ -4,6 +4,7 @@ import {
   getAircraftById,
   getAll,
   updateAircraft,
+  deleteAircraft,
 } from "../DAL/supabase.js";
 
 const tableName = "aircraft_types";

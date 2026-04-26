@@ -16,5 +16,5 @@ app.use("/aircrafts", aircrafts);
 app.use("/aircraftTypes", aircraftTypes);
 app.use("/flights", flights);
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`🚀 Server listening on ${port}`));
+const port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`🚀 Server listening on port ${port}`));

@@ -42,6 +42,15 @@ export default function Menu() {
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-sky-400 to-blue-400 group-hover:w-full transition-all duration-300"></span>
           </Link>
         </li>
+        <li>
+          <Link 
+            to="/map" 
+            className="text-gray-300 hover:text-sky-400 transition-colors duration-300 relative group"
+          >
+            Map
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-sky-400 to-blue-400 group-hover:w-full transition-all duration-300"></span>
+          </Link>
+        </li>
       </ul>
 
       <div className="w-30"></div>

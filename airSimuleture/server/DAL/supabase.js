@@ -1,11 +1,9 @@
 import db from "../db.js";
 
-
 export async function getAll(tableName, filters = {}) {
   try {
     let query = db.from(tableName).select("*");
 
-    // Apply filters
     for (const [key, value] of Object.entries(filters)) {
       query = query.eq(key, value);
     }
@@ -30,7 +28,6 @@ export async function getAircraftById(tableName, id) {
 export async function createAircraft(tableName, data) {
   try {
     const result = await db.from(tableName).insert(data).select("*").single();
-    console.log(result);
     return result.data;
   } catch (error) {
     console.error("create item err:", error.message);
@@ -66,4 +63,18 @@ export async function deleteAircraft(tableName, id) {
     console.error("delete item err:", error.message);
     return null;
   }
+}
+
+export async function getByName(table, name) {
+  const { data, error } = await db
+    .from(table)
+    .select("*")
+    .eq("name", name);
+
+  console.log("DB DATA:", data);
+  console.log("DB ERROR:", error);
+
+  if (error) return null;
+
+  return data[0] || null;
 }
