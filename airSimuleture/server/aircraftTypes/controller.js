@@ -9,6 +9,10 @@ import {
 
 const tableName = "aircraft_types";
 
+function normalizeValue(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
 export async function list(req, res) {
   try {
     const aircraftTypes = await getAll(tableName);
@@ -52,17 +56,21 @@ export async function create(req, res) {
       });
     }
 
-    const existingAircraftType = await getAll(tableName, { aircraftType });
-    if (existingAircraftType.length > 0) {
+    const normalizedTypeName = normalizeValue(aircraftType);
+    const aircraftTypes = await getAll(tableName);
+    const existingAircraftType = aircraftTypes.find(
+      (type) => normalizeValue(type.aircraftType) === normalizedTypeName,
+    );
+    if (existingAircraftType) {
       return res
         .status(400)
         .json({ error: "Aircraft type with this name already exists" });
     }
 
     const newAircraftType = await createAircraft(tableName, {
-      aircraftType,
-      max_speed,
-      full_tank_gas,
+      aircraftType: normalizedTypeName,
+      max_speed: Number(max_speed),
+      full_tank_gas: Number(full_tank_gas),
       created_at: new Date().toISOString(),
     });
 
@@ -77,10 +85,28 @@ export async function update(req, res) {
   const { id } = req.params;
   const { aircraftType, max_speed, full_tank_gas } = req.body;
   try {
+    if (!id || !aircraftType || !max_speed || !full_tank_gas) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const normalizedTypeName = normalizeValue(aircraftType);
+    const aircraftTypes = await getAll(tableName);
+    const duplicateType = aircraftTypes.find(
+      (type) =>
+        normalizeValue(type.aircraftType) === normalizedTypeName &&
+        String(type.id) !== String(id),
+    );
+
+    if (duplicateType) {
+      return res
+        .status(400)
+        .json({ error: "Aircraft type with this name already exists" });
+    }
+
     const updatedAircraftType = await updateAircraft(tableName, id, {
-      aircraftType,
-      max_speed,
-      full_tank_gas,
+      aircraftType: normalizedTypeName,
+      max_speed: Number(max_speed),
+      full_tank_gas: Number(full_tank_gas),
       updated_at: new Date().toISOString(),
     });
     if (updatedAircraftType) {

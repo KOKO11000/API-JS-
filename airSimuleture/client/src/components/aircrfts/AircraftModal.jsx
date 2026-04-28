@@ -1,10 +1,29 @@
-import { useState, useEffect } from "react";
-import { X, Plus } from "lucide-react";
+import { useState } from "react";
+import { Plus, X } from "lucide-react";
 import AddTypeModal from "./AddTypeModal";
+
+const initialFormState = {
+  name: "",
+  aircraft_type: "",
+};
+
+function resolveAircraftTypeValue(aircraft, aircraftTypes) {
+  if (!aircraft) {
+    return "";
+  }
+
+  const matchedType = aircraftTypes.find(
+    (type) =>
+      String(type.id) === String(aircraft.aircraft_type) ||
+      String(type.aircraftType).toLowerCase() === String(aircraft.aircraft_type).toLowerCase(),
+  );
+
+  return matchedType?.aircraftType || aircraft.aircraft_type || "";
+}
 
 export default function AircraftModal({
   isOpen,
-  mode, // 'add', 'edit', 'delete'
+  mode,
   aircraft,
   aircraftTypes,
   onConfirm,
@@ -12,162 +31,143 @@ export default function AircraftModal({
   isLoading,
   onAddType,
 }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    aircraft_type: "",
-  });
-  const [showAddType, setShowAddType] = useState(false);
+  const [formState, setFormState] = useState(() =>
+    mode === "edit" && aircraft
+      ? {
+          name: aircraft.name || "",
+          aircraft_type: resolveAircraftTypeValue(aircraft, aircraftTypes),
+        }
+      : initialFormState,
+  );
+  const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (mode === "delete") {
-      return;
-    }
-    if (aircraft && mode === "edit") {
-      setFormData({
-        name: aircraft.name || "",
-        aircraft_type: aircraft.aircraft_type || "",
-      });
-    } else {
-      setFormData({ name: "", aircraft_type: "" });
-    }
-  }, [isOpen]);
+  if (!isOpen) {
+    return null;
+  }
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  function updateField(event) {
+    const { name, value } = event.target;
+    setFormState((current) => ({ ...current, [name]: value }));
+  }
 
-  const handleConfirm = () => {
+  function handleSubmit() {
     if (mode === "delete") {
       onConfirm();
-    } else if (mode === "add" || mode === "edit") {
-      if (!formData.name.trim() || !formData.aircraft_type) {
-        alert("Please fill in all fields");
-        return;
-      }
-      onConfirm(formData);
+      return;
     }
-  };
 
-  if (!isOpen) return null;
+    if (!formState.name.trim() || !formState.aircraft_type) {
+      alert("Fill all fields.");
+      return;
+    }
+
+    onConfirm({
+      name: formState.name.trim(),
+      aircraft_type: formState.aircraft_type,
+    });
+  }
+
+  async function handleTypeSubmit(typeData) {
+    const createdType = await onAddType(typeData);
+    setFormState((current) => ({
+      ...current,
+      aircraft_type: String(createdType.aircraftType),
+    }));
+    setIsTypeModalOpen(false);
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
-      <div className="bg-linear-to-br from-slate-900 to-gray-900 rounded-2xl p-8 max-w-md w-full border border-white/20 shadow-2xl transform transition-all">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold bg-linear-to-r from-sky-400 to-blue-400 bg-clip-text text-transparent">
-            {mode === "add" && "Add Aircraft"}
-            {mode === "edit" && "Edit Aircraft"}
-            {mode === "delete" && "Delete Aircraft"}
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+      <div className="panel w-full max-w-xl p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--panel-border-soft)] pb-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-[var(--text-subtle)]">
+              Fleet Record
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-[var(--text-main)]">
+              {mode === "add" ? "Add Aircraft" : mode === "edit" ? "Edit Aircraft" : "Delete Aircraft"}
+            </h2>
+          </div>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-white transform hover:rotate-90 transition-transform duration-300"
+            className="border border-[var(--panel-border)] bg-[var(--panel-alt)] p-2 text-[var(--text-muted)]"
           >
-            <X size={24} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Content */}
         {mode === "delete" ? (
-          <div className="py-4">
-            <p className="text-gray-300 text-lg">
-              Are you sure you want to delete <strong className="text-red-400">{aircraft?.name}</strong>?
-              <br />
-              <span className="text-sm text-gray-400">This action cannot be undone.</span>
-            </p>
+          <div className="py-6 text-sm text-[var(--text-muted)]">
+            Remove aircraft <span className="text-[var(--text-main)]">{aircraft?.name}</span> from the fleet registry.
           </div>
         ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-200">
-                Aircraft Name
-              </label>
+          <div className="grid gap-4 py-6">
+            <label className="grid gap-2 text-sm text-[var(--text-muted)]">
+              Aircraft name
               <input
                 type="text"
                 name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter aircraft name"
-                className="w-full px-4 py-2 bg-gray-800/50 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/30 transition-all"
+                value={formState.name}
+                onChange={updateField}
+                className="border border-[var(--panel-border)] bg-[var(--panel-alt)] px-3 py-3 text-[var(--text-main)] outline-none"
               />
-            </div>
+            </label>
 
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-semibold text-gray-200">
-                  Aircraft Type
-                </label>
+            <div className="grid gap-2 text-sm text-[var(--text-muted)]">
+              <div className="flex items-center justify-between gap-3">
+                <span>Aircraft type</span>
                 <button
-                  onClick={() => setShowAddType(true)}
-                  disabled={isLoading}
-                  className="flex items-center gap-1 text-xs bg-linear-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 px-3 py-1 rounded-lg disabled:opacity-50 font-semibold transition-all"
+                  onClick={() => setIsTypeModalOpen(true)}
+                  className="inline-flex items-center gap-2 border border-[var(--panel-border)] bg-[var(--panel-alt)] px-3 py-2 text-xs text-[var(--text-main)]"
                 >
                   <Plus size={14} />
-                  New Type
+                  Add type
                 </button>
               </div>
               <select
                 name="aircraft_type"
-                value={formData.aircraft_type}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-800/50 border border-white/20 rounded-lg text-white focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/30 transition-all"
+                value={formState.aircraft_type}
+                onChange={updateField}
+                className="border border-[var(--panel-border)] bg-[var(--panel-alt)] px-3 py-3 text-[var(--text-main)] outline-none"
               >
-                <option value="">Select Type</option>
-                {aircraftTypes && aircraftTypes.length > 0 ? (
-                  aircraftTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.aircraftType || type.name}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No types available</option>
-                )}
+                <option value="">Select type</option>
+                {aircraftTypes.map((type) => (
+                  <option key={type.id} value={type.aircraftType}>
+                    {type.aircraftType}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
         )}
 
-        {/* Buttons */}
-        <div className="flex gap-3 mt-8 justify-end">
+        <div className="flex justify-end gap-3 border-t border-[var(--panel-border-soft)] pt-4">
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white disabled:opacity-50 font-semibold transition-all duration-300"
+            className="border border-[var(--panel-border)] bg-[var(--panel-alt)] px-4 py-2 text-sm text-[var(--text-main)] disabled:opacity-60"
           >
             Cancel
           </button>
           <button
-            onClick={handleConfirm}
+            onClick={handleSubmit}
             disabled={isLoading}
-            className={`px-6 py-2 rounded-lg text-white font-semibold disabled:opacity-50 transition-all duration-300 ${
+            className={`px-4 py-2 text-sm font-semibold disabled:opacity-60 ${
               mode === "delete"
-                ? "bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
-                : "bg-linear-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700"
+                ? "border border-[rgba(183,93,74,0.4)] bg-[rgba(183,93,74,0.14)] text-[#e4b5aa]"
+                : "border border-[var(--accent)] bg-[rgba(143,154,104,0.14)] text-[var(--accent-strong)]"
             }`}
           >
-            {isLoading ? "Processing..." : mode === "delete" ? "Delete" : "Save"}
+            {isLoading ? "Saving..." : mode === "delete" ? "Delete" : "Save"}
           </button>
         </div>
       </div>
 
-      {/* Add Type Modal */}
       <AddTypeModal
-        isOpen={showAddType}
+        isOpen={isTypeModalOpen}
         isLoading={isLoading}
-        onConfirm={async (typeData) => {
-          try {
-            await onAddType(typeData);
-            setShowAddType(false);
-          } catch (error) {
-            alert("Failed to create type. Please try again.");
-          }
-        }}
-        onCancel={() => setShowAddType(false)}
+        onConfirm={handleTypeSubmit}
+        onCancel={() => setIsTypeModalOpen(false)}
       />
     </div>
   );

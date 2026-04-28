@@ -1,117 +1,130 @@
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
-export default function DataTable({ data = [], columns = [], onEdit, onDelete, onAdd }) {
+export default function DataTable({
+  data = [],
+  columns = [],
+  onEdit,
+  onDelete,
+  onAdd,
+  title = "Operational Records",
+  subtitle = "Manage active data from one place.",
+  addLabel = "Add Record",
+}) {
+  const showActions = Boolean(onEdit || onDelete);
+  const gridColumns = `repeat(${columns.length + (showActions ? 1 : 0)}, minmax(0, 1fr))`;
+
   return (
-    <div className="w-full mt-8 mb-8">
-
-      {/* כותרת + כפתור הוספה */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">Manage Data</h2>
+    <section className="space-y-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.25em] text-[var(--text-subtle)]">
+            Registry
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold text-[var(--text-main)]">
+            {title}
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">{subtitle}</p>
+        </div>
 
         {onAdd && (
           <button
             onClick={onAdd}
-            className="flex items-center gap-2 bg-linear-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-sky-500/50 transition-all duration-300 transform hover:scale-105"
+            className="inline-flex items-center gap-2 border border-[var(--accent)] bg-[rgba(143,154,104,0.14)] px-4 py-3 text-sm font-semibold text-[var(--accent-strong)] hover:bg-[rgba(143,154,104,0.22)]"
           >
-            <Plus size={20} />
-            Add New
+            <Plus size={18} />
+            {addLabel}
           </button>
         )}
       </div>
 
-      {/* Desktop */}
-      <div className="hidden md:block bg-linear-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
-
-        {/* Header */}
-        <div className="grid bg-linear-to-r from-sky-600/30 to-blue-600/30 p-4 font-semibold text-white border-b border-white/20" style={{ gridTemplateColumns: `repeat(${columns.length + 1}, 1fr)` }}>
-          {columns.map((col, i) => (
-            <div key={i} className="text-sm uppercase tracking-wider">{col.header}</div>
+      <div className="panel overflow-hidden">
+        <div
+          className="hidden border-b border-[var(--panel-border)] bg-[rgba(35,43,32,0.7)] px-5 py-4 text-xs uppercase tracking-[0.22em] text-[var(--text-subtle)] md:grid"
+          style={{ gridTemplateColumns: gridColumns }}
+        >
+          {columns.map((column) => (
+            <div key={column.key}>{column.header}</div>
           ))}
-          <div className="text-sm uppercase tracking-wider">Actions</div>
+          {showActions ? <div>Actions</div> : null}
         </div>
 
-        {/* Rows */}
         {data.length === 0 ? (
-          <div className="p-8 text-center text-gray-400">
-            No data available. Click "Add New" to create an entry.
+          <div className="px-5 py-12 text-center text-sm text-[var(--text-muted)]">
+            No records available.
           </div>
         ) : (
-          data.map((item, index) => (
-            <div
-              key={item.id}
-              className="grid p-4 border-t border-white/10 hover:bg-white/10 transition-all duration-200"
-              style={{ gridTemplateColumns: `repeat(${columns.length + 1}, 1fr)` }}
-            >
-              {columns.map((col, i) => (
-                <div key={i} className="text-gray-100">{item[col.key]}</div>
-              ))}
-
-              {/* Actions */}
-              <div className="flex gap-3 justify-start">
-                {onEdit && (
-                  <button 
-                    onClick={() => onEdit && onEdit(item)} 
-                    className="p-2 hover:bg-yellow-500/20 hover:text-yellow-400 text-yellow-300 rounded-lg transition-all duration-200"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                )}
-                {onDelete && (
-                  <button 
-                    onClick={() => onDelete && onDelete(item)} 
-                    className="p-2 hover:bg-red-500/20 hover:text-red-400 text-red-300 rounded-lg transition-all duration-200"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Mobile */}
-      <div className="md:hidden flex flex-col gap-4">
-        {data.length === 0 ? (
-          <div className="text-center text-gray-400 py-8">
-            No data available. Click "Add New" to create an entry.
-          </div>
-        ) : (
-          data.map((item, index) => (
-            <div
-              key={item.id}
-              className="bg-linear-to-br from-white/10 to-white/5 backdrop-blur-xl p-4 rounded-xl border border-white/20 hover:border-sky-400/50 transition-all duration-200 shadow-lg"
-            >
-              {columns.map((col, i) => (
-                <div key={i} className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-300 font-semibold">{col.header}</span>
-                  <span className="text-gray-100">{item[col.key]}</span>
+          <>
+            <div className="hidden md:block">
+              {data.map((row) => (
+                <div
+                  key={row.id}
+                  className="grid items-center border-t border-[var(--panel-border-soft)] px-5 py-4 text-sm text-[var(--text-main)]"
+                  style={{ gridTemplateColumns: gridColumns }}
+                >
+                  {columns.map((column) => (
+                    <div key={column.key} className="truncate pr-3">
+                      {row[column.key]}
+                    </div>
+                  ))}
+                  {showActions ? (
+                    <div className="flex items-center gap-2">
+                      {onEdit ? (
+                        <button
+                          onClick={() => onEdit(row)}
+                          className="border border-[var(--panel-border)] bg-[var(--panel-alt)] p-2 text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      ) : null}
+                      {onDelete ? (
+                        <button
+                          onClick={() => onDelete(row)}
+                          className="border border-[rgba(183,93,74,0.3)] bg-[rgba(183,93,74,0.08)] p-2 text-[#d6a596] hover:bg-[rgba(183,93,74,0.14)]"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               ))}
-
-              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-white/10">
-                {onEdit && (
-                  <button 
-                    onClick={() => onEdit && onEdit(item)} 
-                    className="p-2 hover:bg-yellow-500/20 hover:text-yellow-400 text-yellow-300 rounded-lg transition-all duration-200"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                )}
-                {onDelete && (
-                  <button 
-                    onClick={() => onDelete && onDelete(item)} 
-                    className="p-2 hover:bg-red-500/20 hover:text-red-400 text-red-300 rounded-lg transition-all duration-200"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
-              </div>
             </div>
-          ))
+
+            <div className="space-y-3 p-4 md:hidden">
+              {data.map((row) => (
+                <article key={row.id} className="panel-soft space-y-3 p-4">
+                  {columns.map((column) => (
+                    <div key={column.key} className="flex items-start justify-between gap-4 text-sm">
+                      <span className="text-[var(--text-subtle)]">{column.header}</span>
+                      <span className="text-right text-[var(--text-main)]">{row[column.key]}</span>
+                    </div>
+                  ))}
+                  {showActions ? (
+                    <div className="flex justify-end gap-2 border-t border-[var(--panel-border-soft)] pt-3">
+                      {onEdit ? (
+                        <button
+                          onClick={() => onEdit(row)}
+                          className="border border-[var(--panel-border)] bg-[var(--panel-alt)] p-2 text-[var(--text-muted)]"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      ) : null}
+                      {onDelete ? (
+                        <button
+                          onClick={() => onDelete(row)}
+                          className="border border-[rgba(183,93,74,0.3)] bg-[rgba(183,93,74,0.08)] p-2 text-[#d6a596]"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </>
         )}
       </div>
-
-    </div>
+    </section>
   );
 }

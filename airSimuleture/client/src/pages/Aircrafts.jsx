@@ -1,24 +1,6 @@
-/**
- * Aircrafts Page - Fleet Management Interface
- * 
- * Purpose: Manage the aircraft inventory of the organization
- * 
- * Features:
- * - View all aircraft in a data table (sortable, searchable)
- * - Add new aircraft with name, designation, and type assignment
- * - Edit existing aircraft properties
- * - Delete aircraft from the inventory
- * - Assign aircraft types to ensure proper classification
- * 
- * Data Integrity:
- * - Each aircraft must have a valid aircraft type
- * - Aircraft cannot be deleted if active flights exist
- * - Aircraft cannot be unassigned from types
- */
-
-import Menu from "../components/home/Menu";
-import DataTable from "../components/DataTable";
 import AircraftModal from "../components/aircrfts/AircraftModal";
+import DataTable from "../components/DataTable";
+import Menu from "../components/home/Menu";
 import useAircraft from "../hooks/useAircraft";
 
 export default function Aircrafts() {
@@ -36,47 +18,25 @@ export default function Aircrafts() {
     handleAddType,
   } = useAircraft();
 
-  const data = aircrafts.map((a) => ({
-    ...a,
-    type: a.aircraft_type || "Unknown",
-  }));
-
-  const handleAdd = () => {
-    openAddModal();
-  };
-
-  const handleEdit = (aircraft) => {
-    openEditModal(aircraft);
-  };
-
-  const handleDelete = (aircraft) => {
-    openDeleteModal(aircraft);
-  };
-
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen">
       <Menu />
-      <div className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold mb-4 text-white">Combat Aircraft Fleet</h1>
-            <p className="text-lg text-gray-300 leading-relaxed">
-              Explore our collection of fighter aircraft available in the flight simulation
-              platform. From agile fighters to advanced stealth planes, discover the
-              variety of aircraft and find the perfect one for your flying experience.
-            </p>
-          </div>
-          <DataTable
-            data={data}
-            columns={columns}
-            onAdd={handleAdd}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </div>
-      </div>
+
+      <main className="mx-auto max-w-7xl px-4 py-10 lg:px-8">
+        <DataTable
+          data={aircrafts}
+          columns={columns}
+          onAdd={openAddModal}
+          onEdit={openEditModal}
+          onDelete={openDeleteModal}
+          title="Fleet Registry"
+          subtitle="Every aircraft record uses the same type catalog and naming rules as the backend."
+          addLabel="Add Aircraft"
+        />
+      </main>
 
       <AircraftModal
+        key={`${modal.mode}-${modal.selectedAircraft?.id || "new"}`}
         isOpen={modal.isOpen}
         mode={modal.mode}
         aircraft={modal.selectedAircraft}

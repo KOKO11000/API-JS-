@@ -1,132 +1,116 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
+const initialFormState = {
+  aircraftType: "",
+  max_speed: "",
+  full_tank_gas: "",
+};
+
 export default function AddTypeModal({ isOpen, onConfirm, onCancel, isLoading }) {
-  const [formData, setFormData] = useState({
-    aircraftType: "",
-    max_speed: "",
-    full_tank_gas: "",
-  });
+  const [formState, setFormState] = useState(initialFormState);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  if (!isOpen) {
+    return null;
+  }
 
-  const handleConfirm = () => {
-    if (
-      !formData.aircraftType.trim() ||
-      !formData.max_speed ||
-      !formData.full_tank_gas
-    ) {
-      alert("Please fill in all fields");
-      return;
-    }
+  function updateField(event) {
+    const { name, value } = event.target;
+    setFormState((current) => ({ ...current, [name]: value }));
+  }
 
-    const numSpeed = Number(formData.max_speed);
-    const numFuel = Number(formData.full_tank_gas);
+  function closeModal() {
+    setFormState(initialFormState);
+    onCancel();
+  }
 
-    if (isNaN(numSpeed) || isNaN(numFuel)) {
-      alert("Speed and fuel must be numbers");
-      return;
-    }
+  function handleSubmit() {
+    const maxSpeed = Number(formState.max_speed);
+    const fuelCapacity = Number(formState.full_tank_gas);
 
-    if (numSpeed <= 0 || numFuel <= 0) {
-      alert("Speed and fuel must be positive numbers");
+    if (!formState.aircraftType.trim() || maxSpeed <= 0 || fuelCapacity <= 0) {
+      alert("Enter valid type, speed and fuel capacity.");
       return;
     }
 
     onConfirm({
-      aircraftType: formData.aircraftType,
-      max_speed: numSpeed,
-      full_tank_gas: numFuel,
+      aircraftType: formState.aircraftType.trim(),
+      max_speed: maxSpeed,
+      full_tank_gas: fuelCapacity,
     });
 
-    setFormData({ aircraftType: "", max_speed: "", full_tank_gas: "" });
-  };
-
-  const handleCancel = () => {
-    setFormData({ aircraftType: "", max_speed: "", full_tank_gas: "" });
-    onCancel();
-  };
-
-  if (!isOpen) return null;
+    setFormState(initialFormState);
+  }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-linear-to-br from-slate-900 to-gray-900 rounded-2xl p-8 max-w-md w-full border border-white/20 shadow-2xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold bg-linear-to-r from-sky-400 to-blue-400 bg-clip-text text-transparent">Add Aircraft Type</h2>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 px-4">
+      <div className="panel w-full max-w-lg p-6 shadow-2xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[var(--panel-border-soft)] pb-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-[var(--text-subtle)]">
+              Type Registry
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-[var(--text-main)]">
+              Add Aircraft Type
+            </h2>
+          </div>
           <button
-            onClick={handleCancel}
-            className="text-gray-400 hover:text-white transform hover:rotate-90 transition-transform duration-300"
+            onClick={closeModal}
+            className="border border-[var(--panel-border)] bg-[var(--panel-alt)] p-2 text-[var(--text-muted)]"
           >
-            <X size={24} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Form */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-200">Type Name</label>
+        <div className="grid gap-4 py-6">
+          <label className="grid gap-2 text-sm text-[var(--text-muted)]">
+            Type name
             <input
               type="text"
               name="aircraftType"
-              value={formData.aircraftType}
-              onChange={handleChange}
-              placeholder="e.g., Fighter, Commercial, Cargo"
-              className="w-full px-4 py-2 bg-gray-800/50 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/30 transition-all"
+              value={formState.aircraftType}
+              onChange={updateField}
+              className="border border-[var(--panel-border)] bg-[var(--panel-alt)] px-3 py-3 text-[var(--text-main)] outline-none"
             />
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-200">
-              Max Speed (km/h)
-            </label>
+          <label className="grid gap-2 text-sm text-[var(--text-muted)]">
+            Maximum speed
             <input
               type="number"
               name="max_speed"
-              value={formData.max_speed}
-              onChange={handleChange}
-              placeholder="e.g., 2400"
-              className="w-full px-4 py-2 bg-gray-800/50 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/30 transition-all"
+              value={formState.max_speed}
+              onChange={updateField}
+              className="border border-[var(--panel-border)] bg-[var(--panel-alt)] px-3 py-3 text-[var(--text-main)] outline-none"
             />
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-200">
-              Fuel Tank (Liters)
-            </label>
+          <label className="grid gap-2 text-sm text-[var(--text-muted)]">
+            Fuel capacity
             <input
               type="number"
               name="full_tank_gas"
-              value={formData.full_tank_gas}
-              onChange={handleChange}
-              placeholder="e.g., 8000"
-              className="w-full px-4 py-2 bg-gray-800/50 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-400/30 transition-all"
+              value={formState.full_tank_gas}
+              onChange={updateField}
+              className="border border-[var(--panel-border)] bg-[var(--panel-alt)] px-3 py-3 text-[var(--text-main)] outline-none"
             />
-          </div>
+          </label>
         </div>
 
-        {/* Buttons */}
-        <div className="flex gap-3 mt-8 justify-end">
+        <div className="flex justify-end gap-3 border-t border-[var(--panel-border-soft)] pt-4">
           <button
-            onClick={handleCancel}
+            onClick={closeModal}
             disabled={isLoading}
-            className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-white disabled:opacity-50 font-semibold transition-all duration-300"
+            className="border border-[var(--panel-border)] bg-[var(--panel-alt)] px-4 py-2 text-sm text-[var(--text-main)] disabled:opacity-60"
           >
             Cancel
           </button>
           <button
-            onClick={handleConfirm}
+            onClick={handleSubmit}
             disabled={isLoading}
-            className="px-6 py-2 bg-linear-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 rounded-lg text-white font-semibold disabled:opacity-50 transition-all duration-300"
+            className="border border-[var(--accent)] bg-[rgba(143,154,104,0.14)] px-4 py-2 text-sm font-semibold text-[var(--accent-strong)] disabled:opacity-60"
           >
-            {isLoading ? "Creating..." : "Create Type"}
+            {isLoading ? "Saving..." : "Create"}
           </button>
         </div>
       </div>

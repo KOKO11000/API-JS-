@@ -15,6 +15,7 @@ export async function getAll(tableName, filters = {}) {
     return [];
   }
 }
+
 export async function getAircraftById(tableName, id) {
   try {
     const result = await db.from(tableName).select("*").eq("id", id).single();
@@ -70,9 +71,6 @@ export async function getByName(table, name) {
     .from(table)
     .select("*")
     .eq("name", name);
-
-  console.log("DB DATA:", data);
-  console.log("DB ERROR:", error);
 
   if (error) return null;
 

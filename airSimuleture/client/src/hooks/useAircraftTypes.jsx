@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { createAircraftType as createAircraftTypeRequest, getAircraftTypes } from "../api/flights";
 
 export default function useAircraftTypes() {
   const [aircraftTypes, setAircraftTypes] = useState([]);
@@ -7,8 +7,8 @@ export default function useAircraftTypes() {
 
   async function fetchAircraftTypes() {
     try {
-      const response = await axios.get("http://localhost:5000/aircraftTypes");
-      setAircraftTypes(response.data);
+      const data = await getAircraftTypes();
+      setAircraftTypes(data);
     } catch (error) {
       console.error("Failed to fetch aircraft types:", error);
     }
@@ -17,12 +17,9 @@ export default function useAircraftTypes() {
   async function createAircraftType(typeData) {
     setIsLoading(true);
     try {
-      const response = await axios.post(
-        "http://localhost:5000/aircraftTypes",
-        typeData
-      );
-      setAircraftTypes((prev) => [...prev, response.data]);
-      return response.data;
+      const createdType = await createAircraftTypeRequest(typeData);
+      setAircraftTypes((prev) => [...prev, createdType]);
+      return createdType;
     } catch (error) {
       console.error("Failed to create aircraft type:", error);
       throw error;

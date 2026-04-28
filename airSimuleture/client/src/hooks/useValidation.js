@@ -1,29 +1,38 @@
-/**
- * Validation hook for ensuring data consistency
- * Validates that aircraft in flights exist and have valid types
- */
+import { useMemo } from "react";
 
-import { useMemo } from 'react';
+function findAircraft(flight, aircrafts) {
+  return aircrafts.find(
+    (aircraft) =>
+      String(aircraft.id) === String(flight.aircraft_id) ||
+      String(aircraft.name).toLowerCase() === String(flight.aircraft_id).toLowerCase() ||
+      String(aircraft.name).toLowerCase() === String(flight.aircraft_name || "").toLowerCase(),
+  );
+}
+
+function findAircraftType(aircraft, aircraftTypes) {
+  return aircraftTypes.find(
+    (type) =>
+      String(type.id) === String(aircraft.aircraft_type) ||
+      String(type.aircraftType).toLowerCase() === String(aircraft.aircraft_type).toLowerCase(),
+  );
+}
 
 export default function useValidation(flights, aircrafts, aircraftTypes) {
-  const validatedFlights = useMemo(() => {
-    return flights.filter(flight => {
-      const aircraft = aircrafts.find(a => a.id === flight.aircraft_id);
-      if (!aircraft) return false;
-      
-      const typeExists = aircraftTypes.some(t => t.id === aircraft.aircraft_type_id);
-      return typeExists;
-    });
-  }, [flights, aircrafts, aircraftTypes]);
+  const validatedFlights = useMemo(
+    () =>
+      flights.filter((flight) => {
+        const aircraft = findAircraft(flight, aircrafts);
+        if (!aircraft) {
+          return false;
+        }
 
-  const getAircraftType = useMemo(() => {
-    return (aircraftTypeId) => {
-      return aircraftTypes.find(t => t.id === aircraftTypeId);
-    };
-  }, [aircraftTypes]);
+        return Boolean(findAircraftType(aircraft, aircraftTypes));
+      }),
+    [aircraftTypes, aircrafts, flights],
+  );
 
   return {
     validatedFlights,
-    getAircraftType,
+    getAircraftType: (aircraft) => findAircraftType(aircraft, aircraftTypes),
   };
 }

@@ -4,11 +4,67 @@ import {
   getAll,
   updateAircraft,
   deleteAircraft,
-  getByName,
 } from "../DAL/supabase.js";
 
 const tableName = "flights";
 const BASE_COORDINATES = [31.7683, 35.2137];
+
+function enrichFlightRecord(flight, aircraftMap) {
+  if (!flight) {
+    return flight;
+  }
+
+  const aircraft =
+    aircraftMap.get(String(flight.aircraft_id)) ||
+    aircraftMap.get(String(flight.aircraft_id).trim().toLowerCase()) ||
+    aircraftMap.get(String(flight.aircraft_name || "").trim().toLowerCase());
+  return {
+    ...flight,
+    aircraft_name: aircraft?.name || flight.aircraft_name || null,
+    aircraft_type: aircraft?.aircraft_type || null,
+  };
+}
+
+async function enrichFlights(flights) {
+  const aircrafts = await getAll("aircrafts");
+  const aircraftMap = new Map(
+    aircrafts.flatMap((aircraft) => [
+      [String(aircraft.id), aircraft],
+      [String(aircraft.name).trim().toLowerCase(), aircraft],
+    ]),
+  );
+  return flights.map((flight) => enrichFlightRecord(flight, aircraftMap));
+}
+
+async function resolveAircraft(referenceId, referenceName) {
+  const aircrafts = await getAll("aircrafts");
+  const normalizedName = String(referenceName || "").trim().toLowerCase();
+
+  return (
+    aircrafts.find((aircraft) => String(aircraft.id) === String(referenceId)) ||
+    aircrafts.find(
+      (aircraft) => String(aircraft.name).trim().toLowerCase() === normalizedName,
+    ) ||
+    aircrafts.find(
+      (aircraft) => String(aircraft.name).trim().toLowerCase() === String(referenceId || "").trim().toLowerCase(),
+    ) ||
+    null
+  );
+}
+
+async function hasActiveFlightForAircraft(aircraft, excludedFlightId = null) {
+  const flights = await getAll(tableName, { is_land: false });
+  return flights.some((flight) => {
+    if (excludedFlightId !== null && String(flight.id) === String(excludedFlightId)) {
+      return false;
+    }
+
+    return (
+      String(flight.aircraft_id) === String(aircraft.id) ||
+      String(flight.aircraft_id).trim().toLowerCase() === String(aircraft.name).trim().toLowerCase()
+    );
+  });
+}
 
 function toRadians(value) {
   return (value * Math.PI) / 180;
@@ -56,7 +112,8 @@ function getFlightDistance(flight) {
 export async function list(_, res) {
   try {
     const flights = await getAll(tableName);
-    res.json(flights);
+    const enrichedFlights = await enrichFlights(flights);
+    res.json(enrichedFlights);
   } catch (error) {
     res.status(500).json({ error: "Failed to retrieve flights" });
   }
@@ -67,7 +124,8 @@ export async function get(req, res) {
     const { id } = req.params;
     const flight = await getAircraftById(tableName, id);
     if (flight) {
-      res.json(flight);
+      const [enrichedFlight] = await enrichFlights([flight]);
+      res.json(enrichedFlight);
     } else {
       res.status(404).json({ error: "Flight not found" });
     }
@@ -77,10 +135,9 @@ export async function get(req, res) {
 }
 
 export async function create(req, res) {
-  const { aircraft_name, take_off, is_land, Longitude, Latitude } = req.body;
+  const { aircraft_id, aircraft_name, take_off, is_land, Longitude, Latitude } = req.body;
   try {
     if (
-      !aircraft_name ||
       !take_off ||
       is_land === undefined ||
       Longitude === undefined ||
@@ -89,17 +146,13 @@ export async function create(req, res) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const aircraft = await getByName("aircrafts", aircraft_name);
+    const aircraft = await resolveAircraft(aircraft_id, aircraft_name);
+
     if (!aircraft) {
       return res.status(400).json({ error: "Aircraft does not exist" });
     }
 
-    const existingFlight = await getAll(tableName, {
-      aircraft_id: aircraft.id,
-      is_land: false,
-    });
-
-    if (existingFlight.length > 0) {
+    if (await hasActiveFlightForAircraft(aircraft)) {
       return res.status(400).json({
         error: "This aircraft already has an active flight",
       });
@@ -113,7 +166,8 @@ export async function create(req, res) {
       Latitude: Number(Latitude),
       created_at: new Date().toISOString(),
     });
-    return res.status(201).json(newFlight);
+    const [enrichedFlight] = await enrichFlights([newFlight]);
+    return res.status(201).json(enrichedFlight);
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: "Failed to create flight" });
@@ -122,7 +176,7 @@ export async function create(req, res) {
 
 export async function update(req, res) {
   const { id } = req.params;
-  const { aircraft_id, take_off, is_land, Longitude, Latitude } = req.body;
+  const { aircraft_id, aircraft_name, take_off, is_land, Longitude, Latitude } = req.body;
   try {
     if (!id) {
       return res.status(400).json({ error: "Missing flight ID" });
@@ -137,16 +191,29 @@ export async function update(req, res) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    const aircraft = await resolveAircraft(aircraft_id, aircraft_name);
+
+    if (!aircraft) {
+      return res.status(400).json({ error: "Aircraft does not exist" });
+    }
+
+    if (await hasActiveFlightForAircraft(aircraft, id)) {
+      return res.status(400).json({
+        error: "This aircraft already has an active flight",
+      });
+    }
+
     const updatedFlight = await updateAircraft(tableName, id, {
-      aircraft_id,
-      take_off,
+      aircraft_id: aircraft.id,
+      take_off: new Date(take_off).toISOString(),
       is_land,
-      Longitude,
-      Latitude,
+      Longitude: Number(Longitude),
+      Latitude: Number(Latitude),
       updated_at: new Date().toISOString(),
     });
     if (updatedFlight) {
-      res.json(updatedFlight);
+      const [enrichedFlight] = await enrichFlights([updatedFlight]);
+      res.json(enrichedFlight);
     } else {
       res.status(404).json({ error: "Flight not found" });
     }

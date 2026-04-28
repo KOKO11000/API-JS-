@@ -1,29 +1,35 @@
-import { useEffect } from "react";
-import { useState } from "react";
-import axios from 'axios';
+import { useEffect, useMemo, useState } from "react";
+import {
+  createAircraft,
+  deleteAircraft,
+  getAircrafts,
+  updateAircraft,
+} from "../api/flights";
 import useAircraftTypes from "./useAircraftTypes";
 
-const initialAircraft = {
-  name: "",
-  aircraft_type: "",
-};
+function getAircraftTypeLabel(aircraft, aircraftTypes) {
+  const matchingType = aircraftTypes.find(
+    (type) =>
+      String(type.id) === String(aircraft.aircraft_type) ||
+      String(type.aircraftType).toLowerCase() === String(aircraft.aircraft_type).toLowerCase(),
+  );
+
+  return matchingType?.aircraftType || aircraft.aircraft_type || "Unassigned";
+}
 
 export default function useAircraft() {
   const [aircrafts, setAircrafts] = useState([]);
-  const [fields, setFields] = useState({ ...initialAircraft });
   const [modal, setModal] = useState({
     isOpen: false,
-    mode: null, // 'add', 'edit', 'delete'
+    mode: null,
     selectedAircraft: null,
   });
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Use aircraft types hook
-  const { aircraftTypes, createAircraftType, isLoading: typesLoading } = useAircraftTypes();
+  const { aircraftTypes, createAircraftType } = useAircraftTypes();
 
   async function fetchAircrafts() {
     try {
-      const data = (await axios.get("http://localhost:5000/aircrafts")).data;
+      const data = await getAircrafts();
       setAircrafts(data);
     } catch (error) {
       console.error("Failed to fetch aircrafts:", error);
@@ -31,35 +37,25 @@ export default function useAircraft() {
   }
 
   function openAddModal() {
-    setFields({ ...initialAircraft });
     setModal({ isOpen: true, mode: "add", selectedAircraft: null });
   }
 
   function openEditModal(aircraft) {
-    setFields({
-      id: aircraft.id,
-      name: aircraft.name,
-      aircraft_type: aircraft.aircraft_type,
-    });
     setModal({ isOpen: true, mode: "edit", selectedAircraft: aircraft });
   }
 
   function openDeleteModal(aircraft) {
-    setFields({ id: aircraft.id, ...aircraft });
     setModal({ isOpen: true, mode: "delete", selectedAircraft: aircraft });
   }
 
   function closeModal() {
     setModal({ isOpen: false, mode: null, selectedAircraft: null });
-    setFields({ ...initialAircraft });
   }
 
   async function confirmAdd(newAircraft) {
     setIsLoading(true);
     try {
-      const created = (
-        await axios.post("http://localhost:5000/aircrafts", newAircraft)
-      ).data;
+      const created = await createAircraft(newAircraft);
       setAircrafts((prev) => [...prev, created]);
       closeModal();
     } catch (error) {
@@ -73,15 +69,10 @@ export default function useAircraft() {
   async function confirmEdit(updatedAircraft) {
     setIsLoading(true);
     try {
-      const updated = (
-        await axios.put(
-          `http://localhost:5000/aircrafts/${fields.id}`,
-          updatedAircraft
-        )
-      ).data;
+      const updated = await updateAircraft(modal.selectedAircraft.id, updatedAircraft);
 
       setAircrafts((prev) =>
-        prev.map((a) => (a.id === fields.id ? updated : a))
+        prev.map((aircraft) => (aircraft.id === modal.selectedAircraft.id ? updated : aircraft))
       );
       closeModal();
     } catch (error) {
@@ -95,8 +86,8 @@ export default function useAircraft() {
   async function confirmDelete() {
     setIsLoading(true);
     try {
-      await axios.delete(`http://localhost:5000/aircrafts/${fields.id}`);
-      setAircrafts((prev) => prev.filter((a) => a.id !== fields.id));
+      await deleteAircraft(modal.selectedAircraft.id);
+      setAircrafts((prev) => prev.filter((aircraft) => aircraft.id !== modal.selectedAircraft.id));
       closeModal();
     } catch (error) {
       console.error("Failed to delete aircraft:", error);
@@ -117,35 +108,32 @@ export default function useAircraft() {
   }
 
   async function handleAddType(typeData) {
-    try {
-      const newType = await createAircraftType(typeData);
-      // Auto-select the newly created type
-      setFields((prev) => ({
-        ...prev,
-        aircraft_type: newType.id,
-      }));
-      return newType;
-    } catch (error) {
-      throw error;
-    }
+    return createAircraftType(typeData);
   }
 
   useEffect(() => {
-    (async () => await fetchAircrafts())();
+    fetchAircrafts();
   }, []);
 
-  const columns = [
+  const columns = useMemo(() => [
     { header: "ID", key: "id" },
     { header: "Name", key: "name" },
     { header: "Type", key: "type" },
-  ];
+  ], []);
+
+  const aircraftRows = useMemo(
+    () =>
+      aircrafts.map((aircraft) => ({
+        ...aircraft,
+        type: getAircraftTypeLabel(aircraft, aircraftTypes),
+      })),
+    [aircraftTypes, aircrafts],
+  );
 
   return {
-    aircrafts,
+    aircrafts: aircraftRows,
     aircraftTypes,
     columns,
-    fields,
-    setFields,
     modal,
     isLoading,
     openAddModal,

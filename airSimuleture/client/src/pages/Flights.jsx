@@ -1,123 +1,116 @@
-/**
- * Flights Page - Flight Scheduling & Management
- * 
- * Purpose: Schedule and manage flight missions for the organization
- * 
- * Features:
- * - View all flights in a data table (sortable, searchable)
- * - Schedule new flights with:
- *   - Aircraft selection from available inventory
- *   - Target location coordinates (latitude, longitude)
- *   - Takeoff time specification
- * - Edit flight details before mission launch
- * - Cancel/delete flights that haven't taken off
- * - View flight status: Scheduled, Outbound, Returning, Landed
- * 
- * Data Integrity:
- * - Flights can only be created for existing aircraft
- * - Aircraft must have valid type assignment
- * - Cannot delete active flights (in Outbound or Returning status)
- * - All flights visible on Mission Map dashboard
- * 
- * Status Lifecycle:
- * - Scheduled → Outbound (at takeoff time)
- * - Outbound → Returning (after reaching target)
- * - Returning → Landed (after return to base)
- */
-
-import React, { useState } from "react";
-import Menu from "../components/home/Menu";
-import DataTable from "../components/DataTable";
+import { useState } from "react";
 import FlightModal from "../components/aircrfts/FlightModal";
+import DataTable from "../components/DataTable";
+import Menu from "../components/home/Menu";
 import useFlights from "../hooks/useFlights";
 
-export default function Flights() {
-  const { flights, aircrafts, isLoading, createFlight, updateFlight, deleteFlight } = useFlights();
+function formatDateTime(value) {
+  return new Date(value).toLocaleString("en-IL", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
-  const [modal, setModal] = useState({
+function getAircraftName(flight, aircraftMap) {
+  return (
+    flight.aircraft_name ||
+    aircraftMap.get(String(flight.aircraft_id)) ||
+    `Aircraft ${flight.aircraft_id}`
+  );
+}
+
+export default function Flights() {
+  const {
+    flights,
+    aircrafts,
+    availableAircrafts,
+    isLoading,
+    createFlight,
+    updateFlight,
+    deleteFlight,
+  } = useFlights();
+  const [modalState, setModalState] = useState({
     isOpen: false,
     mode: null,
     selectedFlight: null,
   });
 
-  const handleAdd = () => {
-    setModal({ isOpen: true, mode: "add", selectedFlight: null });
-  };
+  const aircraftMap = new Map(aircrafts.map((aircraft) => [String(aircraft.id), aircraft.name]));
 
-  const handleEdit = (flight) => {
-    setModal({ isOpen: true, mode: "edit", selectedFlight: flight });
-  };
-
-  const handleDelete = (flight) => {
-    setModal({ isOpen: true, mode: "delete", selectedFlight: flight });
-  };
-
-  const handleModalConfirm = async (data) => {
-    try {
-      if (modal.mode === "add") {
-        await createFlight(data);
-      } else if (modal.mode === "edit") {
-        await updateFlight(modal.selectedFlight.id, data);
-      } else if (modal.mode === "delete") {
-        await deleteFlight(modal.selectedFlight.id);
-      }
-      setModal({ isOpen: false, mode: null, selectedFlight: null });
-    } catch (error) {
-      alert("Operation failed. Please try again.");
-    }
-  };
-
-  const getAircraftName = (id) => {
-    const aircraft = aircrafts.find((a) => a.id === id);
-    return aircraft ? aircraft.name : "Unknown";
-  };
-
-  const data = flights.map((f) => ({
-    id: f.id,
-    aircraft: getAircraftName(f.aircraft_id),
-    departure: new Date(f.take_off).toLocaleString("en-IL"),
-    location: `${f.Latitude.toFixed(2)}, ${f.Longitude.toFixed(2)}`,
-    status: f.is_land ? "Landed" : "Flying",
+  const rows = flights.map((flight) => ({
+    ...flight,
+    aircraft: getAircraftName(flight, aircraftMap),
+    departure: formatDateTime(flight.take_off),
+    location: `${Number(flight.Latitude).toFixed(2)}, ${Number(flight.Longitude).toFixed(2)}`,
+    status: flight.is_land ? "Landed" : "Active",
   }));
 
   const columns = [
     { header: "ID", key: "id" },
     { header: "Aircraft", key: "aircraft" },
-    { header: "Take Off", key: "departure" },
-    { header: "Location", key: "location" },
+    { header: "Takeoff", key: "departure" },
+    { header: "Coordinates", key: "location" },
     { header: "Status", key: "status" },
   ];
 
+  function closeModal() {
+    setModalState({ isOpen: false, mode: null, selectedFlight: null });
+  }
+
+  const selectableAircrafts =
+    modalState.mode === "edit" && modalState.selectedFlight
+      ? aircrafts.filter((aircraft) => {
+          const selectedAircraftName = getAircraftName(modalState.selectedFlight, aircraftMap).toLowerCase();
+          return (
+            availableAircrafts.some((item) => item.id === aircraft.id) ||
+            aircraft.name.toLowerCase() === selectedAircraftName
+          );
+        })
+      : availableAircrafts;
+
+  async function handleConfirm(payload) {
+    try {
+      if (modalState.mode === "add") {
+        await createFlight(payload);
+      } else if (modalState.mode === "edit") {
+        await updateFlight(modalState.selectedFlight.id, payload);
+      } else if (modalState.mode === "delete") {
+        await deleteFlight(modalState.selectedFlight.id);
+      }
+      closeModal();
+    } catch {
+      alert("Flight operation failed.");
+    }
+  }
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen">
       <Menu />
-      <div className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold mb-4 text-white">Active Flights</h1>
-            <p className="text-lg text-gray-300 leading-relaxed">
-              Discover the exciting world of aviation with our flight simulation
-              platform. Experience the thrill of flying and explore the skies like
-              never before.
-            </p>
-          </div>
-          <DataTable
-            data={data}
-            columns={columns}
-            onAdd={handleAdd}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        </div>
-      </div>
+
+      <main className="mx-auto max-w-7xl px-4 py-10 lg:px-8">
+        <DataTable
+          data={rows}
+          columns={columns}
+          onAdd={() => setModalState({ isOpen: true, mode: "add", selectedFlight: null })}
+          onEdit={(flight) => setModalState({ isOpen: true, mode: "edit", selectedFlight: flight })}
+          onDelete={(flight) => setModalState({ isOpen: true, mode: "delete", selectedFlight: flight })}
+          title="Mission Board"
+          subtitle="Flight records now use the same aircraft identifiers the server expects for create and update flows."
+          addLabel="Add Flight"
+        />
+      </main>
 
       <FlightModal
-        isOpen={modal.isOpen}
-        mode={modal.mode}
-        flight={modal.selectedFlight}
-        aircrafts={aircrafts}
-        onConfirm={handleModalConfirm}
-        onCancel={() => setModal({ isOpen: false, mode: null, selectedFlight: null })}
+        key={`${modalState.mode}-${modalState.selectedFlight?.id || "new"}`}
+        isOpen={modalState.isOpen}
+        mode={modalState.mode}
+        flight={modalState.selectedFlight}
+        aircrafts={selectableAircrafts}
+        onConfirm={handleConfirm}
+        onCancel={closeModal}
         isLoading={isLoading}
       />
     </div>

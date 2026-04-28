@@ -1,20 +1,24 @@
-// Changes made: Added CORS middleware since cors is in dependencies but was not used. This allows cross-origin requests.
-import express from "express";
 import cors from "cors";
+import express from "express";
+
+import aircraftRoutes from "./aircrafts/routes.js";
+import aircraftTypeRoutes from "./aircraftTypes/routes.js";
+import flightRoutes from "./flights/routes.js";
+
 const app = express();
+const port = process.env.PORT || 5000;
+
 app.use(cors());
 app.use(express.json());
 
-import aircrafts from "./aircrafts/routes.js";
-import aircraftTypes from "./aircraftTypes/routes.js";
-import flights from "./flights/routes.js";
-app.get("/health", (req, res) =>
-  res.send("Welcome to the Air Simulateur API!"),
-);
+app.get("/health", (_, res) => {
+  res.send("🚀 Air Simulator API is ready.");
+});
 
-app.use("/aircrafts", aircrafts);
-app.use("/aircraftTypes", aircraftTypes);
-app.use("/flights", flights);
+app.use("/aircrafts", aircraftRoutes);
+app.use("/aircraftTypes", aircraftTypeRoutes);
+app.use("/flights", flightRoutes);
 
-const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`🚀 Server listening on port ${port}`));
+app.listen(port, () => {
+  console.log(`🚀 Server listening on port ${port}`);
+});
